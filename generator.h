@@ -184,6 +184,36 @@ inline uint16_t get_props(const UnicodeEntry &entry) {
     return props;
 }
 
+// Handle special cases not parseable from UnicodeData.txt
+void handle_special_cases(std::unordered_map<uint32_t, uint16_t> &properties) {
+    // Hexadecimal digits (0-9, A-F, a-f)
+    for (uint32_t c = 0x0030; c <= 0x0039; ++c) {
+        // 0-9
+        properties[c] |= PROP_XDIGIT;
+    }
+    for (uint32_t c = 0x0041; c <= 0x0046; ++c) {
+        // A-F
+        properties[c] |= PROP_XDIGIT;
+    }
+    for (uint32_t c = 0x0061; c <= 0x0066; ++c) {
+        // a-f
+        properties[c] |= PROP_XDIGIT;
+    }
+
+    // ASCII whitespace characters
+    properties[0x0020] |= PROP_SPACE; // SPACE
+    properties[0x0009] |= PROP_SPACE; // TAB
+    properties[0x000A] |= PROP_SPACE; // LINE FEED
+    properties[0x000D] |= PROP_SPACE; // CARRIAGE RETURN
+    properties[0x000B] |= PROP_SPACE; // VERTICAL TAB
+    properties[0x000C] |= PROP_SPACE; // FORM FEED
+
+    // Blank (horizontal spacing only)
+    properties[0x0020] |= PROP_BLANK; // SPACE
+    properties[0x0009] |= PROP_BLANK; // TAB
+}
+
+
 // Returns codepoint -> property flag mappings
 inline std::unordered_map<uint32_t, uint16_t> parse_unicode_data(const std::vector<UnicodeEntry> &entries) {
     std::unordered_map<uint32_t, uint16_t> properties;
@@ -200,6 +230,7 @@ inline std::unordered_map<uint32_t, uint16_t> parse_unicode_data(const std::vect
     }
 
     handle_ranges(properties, entries);
+    handle_special_cases(properties);
 
     return properties;
 }
