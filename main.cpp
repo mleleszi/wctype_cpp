@@ -23,6 +23,8 @@ int main() {
     auto properties = parse_unicode_data(entries);
     auto table = build_two_level_table(properties);
 
+    generate_cpp_tables(table);
+
     const wint_t cp = 0x0041;
     auto prop = lookup_properties(table, cp);
     std::cout << (prop & PROP_LOWER) << std::endl;
