@@ -12,6 +12,8 @@
 #include <fstream>
 #include <sstream>
 #include <cassert>
+#include <map>
+#include <ranges>
 
 enum PropertyBits : uint16_t {
     PROP_UPPER = 1 << 0,
@@ -233,6 +235,67 @@ inline std::unordered_map<uint32_t, uint16_t> parse_unicode_data(const std::vect
     handle_special_cases(properties);
 
     return properties;
+}
+
+struct StagedLookupTable {
+    std::vector<uint16_t> level1; // Maps codepoint >> 8 to level2 offset
+    std::vector<uint16_t> level2; // Actual properties
+};
+
+inline StagedLookupTable build_two_level_table(const std::unordered_map<uint32_t, uint16_t> &properties) {
+    constexpr uint32_t unicode_max = 0x110000;
+    constexpr uint32_t block_size = 256;
+    constexpr uint32_t num_blocks = unicode_max / block_size;
+
+    // Block type: 256 property values
+    using Block = std::array<uint16_t, block_size>;
+
+    // Map: block content -> block index in level2
+    std::map<Block, size_t> blocks;
+    std::vector<uint16_t> level1;
+    std::vector<uint16_t> level2;
+
+    for (uint32_t block_num = 0; block_num < num_blocks; ++block_num) {
+        // Extract properties for this 256-character block
+        Block block_content;
+        for (uint32_t offset = 0; offset < block_size; ++offset) {
+            uint32_t codepoint = block_num << 8 | offset;
+            auto it = properties.find(codepoint);
+            const uint16_t props = it != properties.end() ? it->second : 0;
+            block_content[offset] = props;
+        }
+
+        // Check if we've seen this block before (block sharing)
+        if (auto it = blocks.find(block_content); it != blocks.end()) {
+            // Reuse existing block
+            level1.push_back(it->second);
+        } else {
+            // New block - add to level2
+            const size_t block_index = level2.size();
+            blocks[block_content] = block_index;
+
+            // Add all 256 entries to level2
+            level2.insert(level2.end(), block_content.begin(), block_content.end());
+            level1.push_back(block_index);
+        }
+    }
+    // Only keep level1 entries we actually need (up to the highest used codepoint)
+    uint32_t max_block = 0;
+    for (const auto &codepoint: properties | std::views::keys) {
+        max_block = std::max(max_block, codepoint >> 8);
+    }
+    level1.resize(max_block + 1);
+
+    // Print statistics
+    std::cout << "Table statistics:\n";
+    std::cout << "  Level 1 entries: " << level1.size() << "\n";
+    std::cout << "  Level 2 entries: " << level2.size() << "\n";
+    std::cout << "  Unique blocks: " << blocks.size() << "\n";
+    std::cout << "  Block sharing: " << (0x1100 - blocks.size()) << " blocks saved\n";
+    std::cout << "  Memory: Level1=" << (level1.size() * 2) << " bytes, "
+            << "Level2=" << (level2.size() * 2) << " bytes\n";
+
+    return {level1, level2};
 }
 
 
