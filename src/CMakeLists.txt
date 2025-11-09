@@ -28,7 +28,3 @@ target_include_directories(mywctype INTERFACE
         ${CMAKE_CURRENT_BINARY_DIR}
 )
 add_dependencies(mywctype generate_tables)
-
-add_executable(wctype_cpp main.cpp)
-
-target_link_libraries(wctype_cpp PRIVATE mywctype)
