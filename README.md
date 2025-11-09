@@ -1,4 +1,4 @@
-# Wctype
+# C.UTF8 wctype implementation
 
 ## Building
 
