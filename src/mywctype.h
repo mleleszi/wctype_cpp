@@ -2,8 +2,43 @@
 #define MYWCTYPE_H
 
 #include "wctype_table.h"
+#include <string_view>
 
 namespace my_wctype {
+
+namespace {
+constexpr wctype_t wctype_constexpr(std::string_view property) {
+  if (property == "alnum")
+    return PROP_ALPHA | PROP_DIGIT;
+  if (property == "alpha")
+    return PROP_ALPHA;
+  if (property == "blank")
+    return PROP_BLANK;
+  if (property == "cntrl")
+    return PROP_CNTRL;
+  if (property == "digit")
+    return PROP_DIGIT;
+  if (property == "graph")
+    return PROP_GRAPH;
+  if (property == "lower")
+    return PROP_LOWER;
+  if (property == "print")
+    return PROP_PRINT;
+  if (property == "punct")
+    return PROP_PUNCT;
+  if (property == "space")
+    return PROP_SPACE;
+  if (property == "upper")
+    return PROP_UPPER;
+  if (property == "xdigit")
+    return PROP_XDIGIT;
+  return 0;
+}
+} // namespace
+
+
+typedef uint16_t wctype_t;
+
 inline int iswalpha(wchar_t wc) {
   // Fast path: ASCII
   if (wc <= 0x7F) {
@@ -72,15 +107,38 @@ inline int iswlower(wchar_t wc) {
   return lookup_properties(wc) & PROP_LOWER;
 }
 
+// TODO: add tests
+inline int iswupper(wchar_t wc) {
+  // Fast path: ASCII uppercase
+  if (wc >= 'A' && wc <= 'Z') {
+    return 1;
+  }
+
+  return lookup_properties(wc) & PROP_UPPER;
+}
+
 inline int iswspace(wchar_t wc) {
   // TODO: fast path
 
   return lookup_properties(wc) & PROP_SPACE;
 }
 
-// TODO: iswctype
+inline wctype_t wctype(const char *property) {
+  return wctype_constexpr(property);
+}
+
+// TODO: add tests
+inline int iswctype(wchar_t wc, wctype_t desc) {
+  if (desc == 0) {
+    return 0;
+  }
+
+  uint16_t props = lookup_properties(wc);
+
+  return (props & desc) != 0;
+}
+
 // TODO: iswprint
-// TODO: iswupper
 // TODO: iswxdigit
 
 } // namespace my_wctype

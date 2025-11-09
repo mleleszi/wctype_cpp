@@ -16,7 +16,17 @@
 #include <iomanip>
 #include <iostream>
 
-
+/*
+ * TODO: possible optimization
+ * PROP_DIGIT: Might not be needed, in C.UTF8 only ASCII 0-9 are digits
+ * PROP_XDIGIT: Might not be needed, in C.UTF8, only ASCII hex digits are xdigits.
+ * PROP_SPACE: Might not be needed, in C.UTF8, only the 6 ASCII characters are space.
+ * PROP_BLANK: Might not be needed, in C.UTF8, only ' ' and '\t' are blank
+ *
+ * These 4 might not be needed for the lookup table, and could be hardcoded into the classification functions.
+ * With these 4 removed, the flag would only need to be 8 bits, saving a lot of space.
+ * (we still need to handle these as a wctype_t descriptor though)
+ */
 enum PropertyBits : uint16_t {
   PROP_UPPER = 1 << 0,
   PROP_LOWER = 1 << 1,
@@ -39,8 +49,7 @@ constexpr std::array<uint32_t, 3> NON_WHITESPACE_SPACES = {
 };
 
 inline bool is_non_whitespace_space(uint32_t codepoint) {
-  return std::ranges::any_of(NON_WHITESPACE_SPACES.begin(),
-                             NON_WHITESPACE_SPACES.end(),
+  return std::ranges::any_of(NON_WHITESPACE_SPACES,
                              [codepoint](auto non_whitespace) {
                                return non_whitespace == codepoint;
                              });
@@ -247,7 +256,7 @@ struct StagedLookupTable {
   std::vector<uint16_t> level2; // Actual properties
 };
 
-inline StagedLookupTable build_two_level_table(
+inline StagedLookupTable build_lookup_tables(
     const std::unordered_map<uint32_t, uint16_t> &properties) {
   constexpr uint32_t unicode_max = 0x110000;
   constexpr uint32_t block_size = 256;
