@@ -17,7 +17,8 @@
 #include <iostream>
 
 
-enum PropertyBits : uint16_t {
+enum PropertyBits : uint16_t
+{
     PROP_UPPER = 1 << 0,
     PROP_LOWER = 1 << 1,
     PROP_ALPHA = 1 << 2,
@@ -38,38 +39,46 @@ constexpr std::array<uint32_t, 3> NON_WHITESPACE_SPACES = {
     0x202F, // NARROW NO-BREAK SPACE
 };
 
-inline bool is_non_whitespace_space(uint32_t codepoint) {
+inline bool is_non_whitespace_space(uint32_t codepoint)
+{
     return std::ranges::any_of(NON_WHITESPACE_SPACES.begin(), NON_WHITESPACE_SPACES.end(),
-                               [codepoint](auto non_whitespace) {
+                               [codepoint](auto non_whitespace)
+                               {
                                    return non_whitespace == codepoint;
                                });
 }
 
-inline bool starts_with(const std::string_view str, const char prefix) {
+inline bool starts_with(const std::string_view str, const char prefix)
+{
     assert(!str.empty());
     return str[0] == prefix;
 }
 
-struct UnicodeEntry {
+struct UnicodeEntry
+{
     uint32_t codepoint;
     std::string name;
     std::string category;
 
     UnicodeEntry(const uint32_t cp, std::string n, std::string cat)
-        : codepoint(cp), name(std::move(n)), category(std::move(cat)) {
+        : codepoint(cp), name(std::move(n)), category(std::move(cat))
+    {
     }
 };
 
-inline std::vector<UnicodeEntry> read_unicode_data(const std::string_view filename) {
+inline std::vector<UnicodeEntry> read_unicode_data(const std::string_view filename)
+{
     std::vector<UnicodeEntry> entries;
 
     std::ifstream file(filename.data());
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         throw std::runtime_error("Cannot open file: " + std::string(filename));
     }
 
     std::string line;
-    while (std::getline(file, line)) {
+    while (std::getline(file, line))
+    {
         // Skip empty lines and comments
         if (line.empty() || line[0] == '#') continue;
 
@@ -79,7 +88,8 @@ inline std::vector<UnicodeEntry> read_unicode_data(const std::string_view filena
 
         if (!std::getline(iss, codepoint_str, ';') ||
             !std::getline(iss, name, ';') ||
-            !std::getline(iss, category, ';')) {
+            !std::getline(iss, category, ';'))
+        {
             continue;
         }
 
@@ -90,20 +100,27 @@ inline std::vector<UnicodeEntry> read_unicode_data(const std::string_view filena
 }
 
 // Handles Unicode ranges defined by <First> and <Last>
-inline void handle_ranges(std::unordered_map<uint32_t, uint16_t> &properties,
-                          const std::vector<UnicodeEntry> &entries) {
-    struct RangeInfo {
+inline void handle_ranges(std::unordered_map<uint32_t, uint16_t>& properties,
+                          const std::vector<UnicodeEntry>& entries)
+{
+    struct RangeInfo
+    {
         uint32_t start;
         uint16_t props;
     };
 
     std::optional<RangeInfo> range_info;
-    for (const auto &entry: entries) {
-        if (entry.name.find(", First>") != std::string::npos) {
+    for (const auto& entry : entries)
+    {
+        if (entry.name.find(", First>") != std::string::npos)
+        {
             range_info = {entry.codepoint, properties[entry.codepoint]};
-        } else if (entry.name.find(", Last>") != std::string::npos && range_info) {
+        }
+        else if (entry.name.find(", Last>") != std::string::npos && range_info)
+        {
             // Fill in the range
-            for (uint32_t cp = range_info->start; cp <= entry.codepoint; ++cp) {
+            for (uint32_t cp = range_info->start; cp <= entry.codepoint; ++cp)
+            {
                 properties[cp] = range_info->props;
             }
             range_info.reset();
@@ -112,58 +129,74 @@ inline void handle_ranges(std::unordered_map<uint32_t, uint16_t> &properties,
 }
 
 // Creates the properties flag for a given UnicodeEntry
-inline uint16_t get_props(const UnicodeEntry &entry) {
+inline uint16_t get_props(const UnicodeEntry& entry)
+{
     const uint32_t codepoint = entry.codepoint;
     const std::string_view category = entry.category;
 
     uint16_t props = 0;
     // Letter
-    if (starts_with(category, 'L')) {
+    if (starts_with(category, 'L'))
+    {
         props |= PROP_ALPHA;
 
         // Uppercase
-        if (category == "Lu") {
+        if (category == "Lu")
+        {
             props |= PROP_UPPER;
         }
         // Lowercase
-        else if (category == "Ll") {
+        else if (category == "Ll")
+        {
             props |= PROP_LOWER;
         }
     }
     // Number
-    else if (starts_with(category, 'N')) {
-        if (category == "Nd") {
+    else if (starts_with(category, 'N'))
+    {
+        if (category == "Nd")
+        {
             props |= PROP_ALPHA;
 
             // C.UTF-8 only considers ASCII as digits
-            if (codepoint >= 0x0030 && codepoint <= 0x0039) {
+            if (codepoint >= 0x0030 && codepoint <= 0x0039)
+            {
                 props |= PROP_DIGIT;
             }
-        } else if (category == "Nl") {
+        }
+        else if (category == "Nl")
+        {
             props |= PROP_ALPHA;
         }
     }
     // Punctuation
-    else if (starts_with(category, 'P')) {
+    else if (starts_with(category, 'P'))
+    {
         props |= PROP_PUNCT;
     }
     // Symbol
-    else if (starts_with(category, 'S')) {
+    else if (starts_with(category, 'S'))
+    {
         props |= PROP_PUNCT; // Considered punctuation in C.UTF8
     }
     // Separator
-    else if (starts_with(category, 'Z')) {
-        if (!is_non_whitespace_space(codepoint)) {
+    else if (starts_with(category, 'Z'))
+    {
+        if (!is_non_whitespace_space(codepoint))
+        {
             props |= PROP_SPACE;
             // Space separator
-            if (category == "Zs") {
+            if (category == "Zs")
+            {
                 props |= PROP_BLANK;
             }
         }
     }
     // Control
-    else if (starts_with(category, 'C')) {
-        if (category == "Cc") {
+    else if (starts_with(category, 'C'))
+    {
+        if (category == "Cc")
+        {
             props |= PROP_CNTRL;
         }
     }
@@ -171,17 +204,20 @@ inline uint16_t get_props(const UnicodeEntry &entry) {
 
     // Print = all except control, unassigned, surrogate, format
     if (category != "Cc" && category != "Cs" &&
-        category != "Cn" && category != "Cf") {
+        category != "Cn" && category != "Cf")
+    {
         props |= PROP_PRINT;
     }
 
     // Graph = print but not space
-    if ((props & PROP_PRINT) && !(props & PROP_SPACE)) {
+    if ((props & PROP_PRINT) && !(props & PROP_SPACE))
+    {
         props |= PROP_GRAPH;
     }
 
     // Special case: NO-BREAK SPACE is graphical in glibc C.UTF-8
-    if (codepoint == 0x00A0) {
+    if (codepoint == 0x00A0)
+    {
         props |= PROP_GRAPH;
     }
 
@@ -189,17 +225,21 @@ inline uint16_t get_props(const UnicodeEntry &entry) {
 }
 
 // Handle special cases not parseable from UnicodeData.txt
-void handle_special_cases(std::unordered_map<uint32_t, uint16_t> &properties) {
+void handle_special_cases(std::unordered_map<uint32_t, uint16_t>& properties)
+{
     // Hexadecimal digits (0-9, A-F, a-f)
-    for (uint32_t c = 0x0030; c <= 0x0039; ++c) {
+    for (uint32_t c = 0x0030; c <= 0x0039; ++c)
+    {
         // 0-9
         properties[c] |= PROP_XDIGIT;
     }
-    for (uint32_t c = 0x0041; c <= 0x0046; ++c) {
+    for (uint32_t c = 0x0041; c <= 0x0046; ++c)
+    {
         // A-F
         properties[c] |= PROP_XDIGIT;
     }
-    for (uint32_t c = 0x0061; c <= 0x0066; ++c) {
+    for (uint32_t c = 0x0061; c <= 0x0066; ++c)
+    {
         // a-f
         properties[c] |= PROP_XDIGIT;
     }
@@ -219,14 +259,17 @@ void handle_special_cases(std::unordered_map<uint32_t, uint16_t> &properties) {
 
 
 // Returns codepoint -> property flag mappings
-inline std::unordered_map<uint32_t, uint16_t> parse_unicode_data(const std::vector<UnicodeEntry> &entries) {
+inline std::unordered_map<uint32_t, uint16_t> parse_unicode_data(const std::vector<UnicodeEntry>& entries)
+{
     std::unordered_map<uint32_t, uint16_t> properties;
 
-    for (const auto &entry: entries) {
+    for (const auto& entry : entries)
+    {
         const uint32_t codepoint = entry.codepoint;
 
         // Skip surrogate pairs
-        if (codepoint >= 0xD800 && codepoint <= 0xDFFF) {
+        if (codepoint >= 0xD800 && codepoint <= 0xDFFF)
+        {
             continue;
         }
 
@@ -239,12 +282,14 @@ inline std::unordered_map<uint32_t, uint16_t> parse_unicode_data(const std::vect
     return properties;
 }
 
-struct StagedLookupTable {
+struct StagedLookupTable
+{
     std::vector<uint16_t> level1; // Maps codepoint >> 8 to level2 offset
     std::vector<uint16_t> level2; // Actual properties
 };
 
-inline StagedLookupTable build_two_level_table(const std::unordered_map<uint32_t, uint16_t> &properties) {
+inline StagedLookupTable build_two_level_table(const std::unordered_map<uint32_t, uint16_t>& properties)
+{
     constexpr uint32_t unicode_max = 0x110000;
     constexpr uint32_t block_size = 256;
     constexpr uint32_t num_blocks = unicode_max / block_size;
@@ -257,10 +302,12 @@ inline StagedLookupTable build_two_level_table(const std::unordered_map<uint32_t
     std::vector<uint16_t> level1;
     std::vector<uint16_t> level2;
 
-    for (uint32_t block_num = 0; block_num < num_blocks; ++block_num) {
+    for (uint32_t block_num = 0; block_num < num_blocks; ++block_num)
+    {
         // Extract properties for this 256-character block
         Block block_content;
-        for (uint32_t offset = 0; offset < block_size; ++offset) {
+        for (uint32_t offset = 0; offset < block_size; ++offset)
+        {
             uint32_t codepoint = block_num << 8 | offset;
             auto it = properties.find(codepoint);
             const uint16_t props = it != properties.end() ? it->second : 0;
@@ -268,10 +315,13 @@ inline StagedLookupTable build_two_level_table(const std::unordered_map<uint32_t
         }
 
         // Check if we've seen this block before (block sharing)
-        if (auto it = blocks.find(block_content); it != blocks.end()) {
+        if (auto it = blocks.find(block_content); it != blocks.end())
+        {
             // Reuse existing block
             level1.push_back(it->second);
-        } else {
+        }
+        else
+        {
             // New block - add to level2
             const size_t block_index = level2.size();
             blocks[block_content] = block_index;
@@ -283,7 +333,8 @@ inline StagedLookupTable build_two_level_table(const std::unordered_map<uint32_t
     }
     // Only keep level1 entries we actually need (up to the highest used codepoint)
     uint32_t max_block = 0;
-    for (const auto &codepoint: properties | std::views::keys) {
+    for (const auto& codepoint : properties | std::views::keys)
+    {
         max_block = std::max(max_block, codepoint >> 8);
     }
     level1.resize(max_block + 1);
@@ -295,12 +346,13 @@ inline StagedLookupTable build_two_level_table(const std::unordered_map<uint32_t
     std::cout << "  Unique blocks: " << blocks.size() << "\n";
     std::cout << "  Block sharing: " << (0x1100 - blocks.size()) << " blocks saved\n";
     std::cout << "  Memory: Level1=" << (level1.size() * 2) << " bytes, "
-            << "Level2=" << (level2.size() * 2) << " bytes\n";
+        << "Level2=" << (level2.size() * 2) << " bytes\n";
 
     return {level1, level2};
 }
 
-inline void generate_code(const StagedLookupTable &lookup_table) {
+inline void generate_code(const StagedLookupTable& lookup_table)
+{
     auto level1 = lookup_table.level1;
     auto level2 = lookup_table.level2;
     // Generate property bit definitions
@@ -335,11 +387,14 @@ enum PropertyBits : uint16_t {
     {
         std::ofstream f("wctype_level1.inc");
         f << "// Auto-generated level1 table\n";
-        for (size_t i = 0; i < level1.size(); i += 8) {
+        for (size_t i = 0; i < level1.size(); i += 8)
+        {
             f << "  ";
-            for (size_t j = i; j < i + 8 && j < level1.size(); ++j) {
+            for (size_t j = i; j < i + 8 && j < level1.size(); ++j)
+            {
                 f << std::setw(5) << level1[j];
-                if (j + 1 < level1.size()) {
+                if (j + 1 < level1.size())
+                {
                     f << ",";
                 }
             }
@@ -350,12 +405,15 @@ enum PropertyBits : uint16_t {
     {
         std::ofstream f("wctype_level2.inc");
         f << "// Auto-generated level2 table\n";
-        for (size_t i = 0; i < level2.size(); i += 8) {
+        for (size_t i = 0; i < level2.size(); i += 8)
+        {
             f << "  ";
-            for (size_t j = i; j < i + 8 && j < level2.size(); ++j) {
+            for (size_t j = i; j < i + 8 && j < level2.size(); ++j)
+            {
                 f << "0x" << std::hex << std::setw(4) << std::setfill('0') << level2[j] << std::dec <<
-                        std::setfill(' ');
-                if (j + 1 < level2.size()) {
+                    std::setfill(' ');
+                if (j + 1 < level2.size())
+                {
                     f << ", ";
                 }
             }

@@ -2,7 +2,8 @@
 #include "mywctype.h"
 #include <cwchar>
 
-class AlnumTest : public WctypeTest, public ::testing::WithParamInterface<TestCase> {
+class AlnumTest : public WctypeTest,
+                  public ::testing::WithParamInterface<TestCase> {
 };
 
 TEST_P(AlnumTest, IsAlnum) {
@@ -11,9 +12,11 @@ TEST_P(AlnumTest, IsAlnum) {
   int std_result = std::iswalnum(static_cast<wint_t>(test.codepoint));
 
   EXPECT_EQ((my_result != 0), test.expected)
-    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name <<
+ ")";
   EXPECT_EQ((my_result != 0), (std_result != 0))
-    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.
+name << ")";
 }
 
 INSTANTIATE_TEST_SUITE_P(AlnumTests, AlnumTest, ::testing::Values(
@@ -32,7 +35,8 @@ INSTANTIATE_TEST_SUITE_P(AlnumTests, AlnumTest, ::testing::Values(
                            TestCase{0x0040, "COMMERCIAL AT", false},
 
                            // Unicode letters
-                           TestCase{0x00E9, "LATIN SMALL LETTER E WITH ACUTE", true},
+                           TestCase{0x00E9, "LATIN SMALL LETTER E WITH ACUTE",
+                           true},
                            TestCase{0x0391, "GREEK CAPITAL LETTER ALPHA", true},
                            TestCase{0x0430, "CYRILLIC SMALL LETTER A", true},
 

@@ -2,7 +2,8 @@
 #include "mywctype.h"
 #include <cwchar>
 
-class SpaceTest : public WctypeTest, public ::testing::WithParamInterface<TestCase> {
+class SpaceTest : public WctypeTest,
+                  public ::testing::WithParamInterface<TestCase> {
 };
 
 TEST_P(SpaceTest, IsSpace) {
@@ -11,9 +12,11 @@ TEST_P(SpaceTest, IsSpace) {
   int std_result = std::iswspace(static_cast<wint_t>(test.codepoint));
 
   EXPECT_EQ((my_result != 0), test.expected)
-    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name <<
+ ")";
   EXPECT_EQ((my_result != 0), (std_result != 0))
-    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.
+name << ")";
 }
 
 INSTANTIATE_TEST_SUITE_P(SpaceTests, SpaceTest, ::testing::Values(
@@ -53,6 +56,7 @@ INSTANTIATE_TEST_SUITE_P(SpaceTests, SpaceTest, ::testing::Values(
                            TestCase{0x2007, "FIGURE SPACE", false},
 
                            // Non-whitespace Unicode
-                           TestCase{0x00E9, "LATIN SMALL LETTER E WITH ACUTE", false},
+                           TestCase{0x00E9, "LATIN SMALL LETTER E WITH ACUTE",
+                           false},
                            TestCase{0x2764, "HEAVY BLACK HEART", false}
                          ));

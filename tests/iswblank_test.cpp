@@ -2,7 +2,8 @@
 #include "mywctype.h"
 #include <cwchar>
 
-class BlankTest : public WctypeTest, public ::testing::WithParamInterface<TestCase> {
+class BlankTest : public WctypeTest,
+                  public ::testing::WithParamInterface<TestCase> {
 };
 
 TEST_P(BlankTest, IsBlank) {
@@ -11,9 +12,11 @@ TEST_P(BlankTest, IsBlank) {
   int std_result = std::iswblank(static_cast<wint_t>(test.codepoint));
 
   EXPECT_EQ((my_result != 0), test.expected)
-    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name <<
+ ")";
   EXPECT_EQ((my_result != 0), (std_result != 0))
-    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.
+name << ")";
 }
 
 INSTANTIATE_TEST_SUITE_P(BlankTests, BlankTest, ::testing::Values(

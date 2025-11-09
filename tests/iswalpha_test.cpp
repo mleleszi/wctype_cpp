@@ -2,7 +2,8 @@
 #include "mywctype.h"
 #include <cwchar>
 
-class AlphaTest : public WctypeTest, public ::testing::WithParamInterface<TestCase> {
+class AlphaTest : public WctypeTest,
+                  public ::testing::WithParamInterface<TestCase> {
 };
 
 TEST_P(AlphaTest, IsAlpha) {
@@ -11,9 +12,11 @@ TEST_P(AlphaTest, IsAlpha) {
   int std_result = std::iswalpha(static_cast<wint_t>(test.codepoint));
 
   EXPECT_EQ((my_result != 0), test.expected)
-    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name <<
+ ")";
   EXPECT_EQ((my_result != 0), (std_result != 0))
-    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.
+name << ")";
 }
 
 INSTANTIATE_TEST_SUITE_P(AlphaTests, AlphaTest, ::testing::Values(
@@ -33,9 +36,12 @@ INSTANTIATE_TEST_SUITE_P(AlphaTests, AlphaTest, ::testing::Values(
                            TestCase{0x007E, "TILDE", false},
 
                            // Latin Extended
-                           TestCase{0x00C0, "LATIN CAPITAL LETTER A WITH GRAVE", true},
-                           TestCase{0x00E9, "LATIN SMALL LETTER E WITH ACUTE", true},
-                           TestCase{0x00FF, "LATIN SMALL LETTER Y WITH DIAERESIS", true},
+                           TestCase{0x00C0, "LATIN CAPITAL LETTER A WITH GRAVE",
+                           true},
+                           TestCase{0x00E9, "LATIN SMALL LETTER E WITH ACUTE",
+                           true},
+                           TestCase{0x00FF,
+                           "LATIN SMALL LETTER Y WITH DIAERESIS", true},
 
                            // Greek
                            TestCase{0x0391, "GREEK CAPITAL LETTER ALPHA", true},
@@ -56,9 +62,11 @@ INSTANTIATE_TEST_SUITE_P(AlphaTests, AlphaTest, ::testing::Values(
                            TestCase{0x05D1, "HEBREW LETTER BET", true},
 
                            // CJK
-                           TestCase{0x4E00, "CJK UNIFIED IDEOGRAPH-4E00 (first)", true},
+                           TestCase{0x4E00, "CJK UNIFIED IDEOGRAPH-4E00 (first)"
+                           , true},
                            TestCase{0x4E01, "CJK UNIFIED IDEOGRAPH-4E01", true},
-                           TestCase{0x9FFF, "CJK UNIFIED IDEOGRAPH-9FFF (last in BMP)", true},
+                           TestCase{0x9FFF,
+                           "CJK UNIFIED IDEOGRAPH-9FFF (last in BMP)", true},
 
                            // Hiragana
                            TestCase{0x3042, "HIRAGANA LETTER A", true},
@@ -81,7 +89,8 @@ INSTANTIATE_TEST_SUITE_P(AlphaTests, AlphaTest, ::testing::Values(
                            TestCase{0xFFFD, "REPLACEMENT CHARACTER", false},
 
                            // Beyond BMP - CJK Extension B
-                           TestCase{0x20000, "CJK UNIFIED IDEOGRAPH-20000", true},
+                           TestCase{0x20000, "CJK UNIFIED IDEOGRAPH-20000", true
+                           },
 
                            // Roman numerals - Category Nl (Letter Numbers) - should be ALPHA but NOT DIGIT
                            TestCase{0x2160, "ROMAN NUMERAL ONE", true},

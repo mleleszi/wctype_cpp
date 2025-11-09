@@ -2,7 +2,8 @@
 #include "mywctype.h"
 #include <cwchar>
 
-class GraphTest : public WctypeTest, public ::testing::WithParamInterface<TestCase> {
+class GraphTest : public WctypeTest,
+                  public ::testing::WithParamInterface<TestCase> {
 };
 
 TEST_P(GraphTest, IsGraph) {
@@ -11,9 +12,11 @@ TEST_P(GraphTest, IsGraph) {
   int std_result = std::iswgraph(static_cast<wint_t>(test.codepoint));
 
   EXPECT_EQ((my_result != 0), test.expected)
-    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name <<
+ ")";
   EXPECT_EQ((my_result != 0), (std_result != 0))
-    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.
+name << ")";
 }
 
 INSTANTIATE_TEST_SUITE_P(GraphTests, GraphTest, ::testing::Values(
@@ -33,7 +36,8 @@ INSTANTIATE_TEST_SUITE_P(GraphTests, GraphTest, ::testing::Values(
                            TestCase{0x001F, "INFORMATION SEPARATOR ONE", false},
 
                            // Unicode graphical
-                           TestCase{0x00E9, "LATIN SMALL LETTER E WITH ACUTE", true},
+                           TestCase{0x00E9, "LATIN SMALL LETTER E WITH ACUTE",
+                           true},
                            TestCase{0x0391, "GREEK CAPITAL LETTER ALPHA", true},
                            TestCase{0x4E00, "CJK UNIFIED IDEOGRAPH-4E00", true},
                            TestCase{0x2764, "HEAVY BLACK HEART", true},

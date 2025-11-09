@@ -2,7 +2,8 @@
 #include "mywctype.h"
 #include <cwchar>
 
-class PunctTest : public WctypeTest, public ::testing::WithParamInterface<TestCase> {
+class PunctTest : public WctypeTest,
+                  public ::testing::WithParamInterface<TestCase> {
 };
 
 TEST_P(PunctTest, IsPunct) {
@@ -11,9 +12,11 @@ TEST_P(PunctTest, IsPunct) {
   int std_result = std::iswpunct(static_cast<wint_t>(test.codepoint));
 
   EXPECT_EQ((my_result != 0), test.expected)
-    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Failed for U+" << std::hex << test.codepoint << " (" << test.name <<
+ ")";
   EXPECT_EQ((my_result != 0), (std_result != 0))
-    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.name << ")";
+    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.
+name << ")";
 }
 
 INSTANTIATE_TEST_SUITE_P(PunctTests, PunctTest, ::testing::Values(
@@ -45,9 +48,11 @@ INSTANTIATE_TEST_SUITE_P(PunctTests, PunctTest, ::testing::Values(
                            TestCase{0x2013, "EN DASH", true},
                            TestCase{0x2014, "EM DASH", true},
                            TestCase{0x2018, "LEFT SINGLE QUOTATION MARK", true},
-                           TestCase{0x2019, "RIGHT SINGLE QUOTATION MARK", true},
+                           TestCase{0x2019, "RIGHT SINGLE QUOTATION MARK", true}
+                           ,
                            TestCase{0x201C, "LEFT DOUBLE QUOTATION MARK", true},
-                           TestCase{0x201D, "RIGHT DOUBLE QUOTATION MARK", true},
+                           TestCase{0x201D, "RIGHT DOUBLE QUOTATION MARK", true}
+                           ,
                            TestCase{0x2026, "HORIZONTAL ELLIPSIS", true},
                            TestCase{0x2030, "PER MILLE SIGN", true},
                            TestCase{0x3001, "IDEOGRAPHIC COMMA", true},
