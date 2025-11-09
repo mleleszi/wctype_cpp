@@ -4,7 +4,7 @@
 #include "wctype_table.h"
 
 namespace my_wctype {
-    int iswalpha(wchar_t wc) {
+    inline int iswalpha(wchar_t wc) {
         // Fast path: ASCII
         if (wc <= 0x7F) {
             return (wc >= 'A' && wc <= 'Z') || (wc >= 'a' && wc <= 'z');
@@ -18,35 +18,34 @@ namespace my_wctype {
             return 1;
         }
 
-        // Table lookup
         return lookup_properties(wc) & PROP_ALPHA;
     }
 
-    int iswdigit(wchar_t wc) {
+    inline int iswdigit(wchar_t wc) {
         return lookup_properties(wc) & PROP_DIGIT;
     }
 
-    int iswpunct(wchar_t wc) {
+    inline int iswpunct(wchar_t wc) {
         return lookup_properties(wc) & PROP_PUNCT;
     }
 
-    int iswalnum(wchar_t wc) {
+    inline int iswalnum(wchar_t wc) {
         return lookup_properties(wc) & (PROP_ALPHA | PROP_DIGIT);
     }
 
-    int iswblank(wchar_t wc) {
+    inline int iswblank(wchar_t wc) {
         return lookup_properties(wc) & PROP_BLANK;
     }
 
-    int iswgraph(wchar_t wc) {
+    inline int iswgraph(wchar_t wc) {
         return lookup_properties(wc) & PROP_GRAPH;
     }
 
-    int iswlower(wchar_t wc) {
+    inline int iswlower(wchar_t wc) {
         return lookup_properties(wc) & PROP_LOWER;
     }
 
-    int iswspace(wchar_t wc) {
+    inline int iswspace(wchar_t wc) {
         return lookup_properties(wc) & PROP_SPACE;
     }
 } // namespace my_wctype

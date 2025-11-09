@@ -63,7 +63,7 @@ struct UnicodeEntry {
 inline std::vector<UnicodeEntry> read_unicode_data(const std::string_view filename) {
     std::vector<UnicodeEntry> entries;
 
-    std::ifstream file(filename);
+    std::ifstream file(filename.data());
     if (!file.is_open()) {
         throw std::runtime_error("Cannot open file: " + std::string(filename));
     }
