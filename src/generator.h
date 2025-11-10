@@ -22,9 +22,11 @@
  * PROP_XDIGIT: Might not be needed, in C.UTF8, only ASCII hex digits are xdigits.
  * PROP_SPACE: Might not be needed, in C.UTF8, only the 6 ASCII characters are space.
  * PROP_BLANK: Might not be needed, in C.UTF8, only ' ' and '\t' are blank
+ * PROP_ALNUM: Might not be needed, can be PROP_ALPHA | PROP_DIGIT
+ * PROP_GRAPH: Migt not be needed, can be PROP_PRINT & !PROP_SPACE
  *
- * These 4 might not be needed for the lookup table, and could be hardcoded into the classification functions.
- * With these 4 removed, the flag would only need to be 8 bits, saving a lot of space.
+ * These 6 might not be needed for the lookup table, and could be hardcoded into the classification functions.
+ * With these 6 removed, the flag would only need to be 8 bits, saving a lot of space.
  * (we still need to handle these as a wctype_t descriptor though)
  */
 enum PropertyBits : uint16_t {
@@ -81,11 +83,9 @@ inline std::vector<UnicodeEntry> read_unicode_data(
 
   std::string line;
   while (std::getline(file, line)) {
-    // Skip empty lines and comments
     if (line.empty() || line[0] == '#')
       continue;
 
-    // Parse the line
     std::istringstream iss(line);
     std::string codepoint_str, name, category;
 
@@ -247,6 +247,12 @@ inline std::unordered_map<uint32_t, uint16_t> parse_unicode_data(
 
   handle_ranges(properties, entries);
   handle_special_cases(properties);
+
+  // TODO: assert disjoint set invariants defined by C standard
+  // digit & alpha must be disjoint
+  // punct & alpha must be disjoint
+  // punct & digit must be disjoint
+  // cntrl & print must be disjoint
 
   return properties;
 }
