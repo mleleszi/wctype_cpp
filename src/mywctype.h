@@ -7,33 +7,33 @@
 namespace my_wctype {
 
 namespace {
-constexpr wctype_t wctype_constexpr(std::string_view property) {
-  if (property == "alnum")
-    return PROP_ALPHA | PROP_DIGIT;
-  if (property == "alpha")
-    return PROP_ALPHA;
-  if (property == "blank")
-    return PROP_BLANK;
-  if (property == "cntrl")
-    return PROP_CNTRL;
-  if (property == "digit")
-    return PROP_DIGIT;
-  if (property == "graph")
-    return PROP_GRAPH;
-  if (property == "lower")
-    return PROP_LOWER;
-  if (property == "print")
-    return PROP_PRINT;
-  if (property == "punct")
-    return PROP_PUNCT;
-  if (property == "space")
-    return PROP_SPACE;
-  if (property == "upper")
-    return PROP_UPPER;
-  if (property == "xdigit")
-    return PROP_XDIGIT;
-  return 0;
-}
+// constexpr wctype_t wctype_constexpr(std::string_view property) {
+//   if (property == "alnum")
+//     return PROP_ALPHA | PROP_DIGIT;
+//   if (property == "alpha")
+//     return PROP_ALPHA;
+//   if (property == "blank")
+//     return PROP_BLANK;
+//   if (property == "cntrl")
+//     return PROP_CNTRL;
+//   if (property == "digit")
+//     return PROP_DIGIT;
+//   if (property == "graph")
+//     return PROP_GRAPH;
+//   if (property == "lower")
+//     return PROP_LOWER;
+//   if (property == "print")
+//     return PROP_PRINT;
+//   if (property == "punct")
+//     return PROP_PUNCT;
+//   if (property == "space")
+//     return PROP_SPACE;
+//   if (property == "upper")
+//     return PROP_UPPER;
+//   if (property == "xdigit")
+//     return PROP_XDIGIT;
+//   return 0;
+// }
 } // namespace
 
 
@@ -61,8 +61,7 @@ inline int iswdigit(wchar_t wc) {
   if (wc >= '0' && wc <= '9') {
     return 1;
   }
-  // In C.UTF8 only ASCII 0-9 are digits, so this is not needed
-  return lookup_properties(wc) & PROP_DIGIT;
+  return 0;
 }
 
 inline int iswpunct(wchar_t wc) {
@@ -84,8 +83,8 @@ inline int iswalnum(wchar_t wc) {
       (wc >= 0x20000 && wc <= 0x2A6DF)) {
     return 1;
   }
-
-  return lookup_properties(wc) & (PROP_ALPHA | PROP_DIGIT);
+  // only need to check alpha, digit checked already
+  return lookup_properties(wc) & PROP_ALPHA;
 }
 
 inline int iswblank(wchar_t wc) {
@@ -95,7 +94,11 @@ inline int iswblank(wchar_t wc) {
 
 inline int iswgraph(wchar_t wc) {
   // TODO: fast path
-  return lookup_properties(wc) & PROP_GRAPH;
+  if (wc == 0x00A0) {
+    return 1;
+  }
+
+  return lookup_properties(wc) & PROP_PRINT & !PROP_SPACE;
 }
 
 inline int iswlower(wchar_t wc) {
@@ -123,9 +126,9 @@ inline int iswspace(wchar_t wc) {
   return lookup_properties(wc) & PROP_SPACE;
 }
 
-inline wctype_t wctype(const char *property) {
-  return wctype_constexpr(property);
-}
+// inline wctype_t wctype(const char *property) {
+//   return wctype_constexpr(property);
+// }
 
 // TODO: add tests
 inline int iswctype(wchar_t wc, wctype_t desc) {
