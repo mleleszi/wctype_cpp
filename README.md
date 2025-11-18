@@ -10,8 +10,18 @@ ninja
 
 ## Running tests
 
+Run all tests:
+
 ```
-ninja check-wctype
+ninja check-all
+```
+
+Run individual function tests:
+
+```
+ninja check-iswalpha
+ninja check-iswdigit
+...
 ```
 
 ## Checking the size of the generated static library

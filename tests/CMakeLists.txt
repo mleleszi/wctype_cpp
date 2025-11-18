@@ -35,9 +35,87 @@ target_link_libraries(wctype_tests PRIVATE
 include(GoogleTest)
 gtest_discover_tests(wctype_tests)
 
-add_custom_target(check-wctype
+add_custom_target(check-all
         COMMAND wctype_tests
         DEPENDS wctype_tests
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Running tests..."
+        COMMENT "Running all tests..."
+)
+
+# Individual test targets
+add_custom_target(check-iswalpha
+        COMMAND wctype_tests --gtest_filter="AlphaTest*"
+        DEPENDS wctype_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running iswalpha tests..."
+)
+
+add_custom_target(check-iswdigit
+        COMMAND wctype_tests --gtest_filter="DigitTest*"
+        DEPENDS wctype_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running iswdigit tests..."
+)
+
+add_custom_target(check-iswpunct
+        COMMAND wctype_tests --gtest_filter="PunctTest*"
+        DEPENDS wctype_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running iswpunct tests..."
+)
+
+add_custom_target(check-iswalnum
+        COMMAND wctype_tests --gtest_filter="AlnumTest*"
+        DEPENDS wctype_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running iswalnum tests..."
+)
+
+add_custom_target(check-iswblank
+        COMMAND wctype_tests --gtest_filter="BlankTest*"
+        DEPENDS wctype_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running iswblank tests..."
+)
+
+add_custom_target(check-iswgraph
+        COMMAND wctype_tests --gtest_filter="GraphTest*"
+        DEPENDS wctype_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running iswgraph tests..."
+)
+
+add_custom_target(check-iswlower
+        COMMAND wctype_tests --gtest_filter="LowerTest*"
+        DEPENDS wctype_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running iswlower tests..."
+)
+
+add_custom_target(check-iswspace
+        COMMAND wctype_tests --gtest_filter="SpaceTest*"
+        DEPENDS wctype_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running iswspace tests..."
+)
+
+add_custom_target(check-iswxdigit
+        COMMAND wctype_tests --gtest_filter="XdigitTest*"
+        DEPENDS wctype_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running iswxdigit tests..."
+)
+
+add_custom_target(check-iswctype
+        COMMAND wctype_tests --gtest_filter="IswctypeTest*"
+        DEPENDS wctype_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running iswctype tests..."
+)
+
+add_custom_target(check-wctype
+        COMMAND wctype_tests --gtest_filter="WctypeMapTest*"
+        DEPENDS wctype_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running wctype mapping tests..."
 )
