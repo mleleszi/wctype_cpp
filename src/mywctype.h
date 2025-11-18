@@ -108,6 +108,15 @@ inline int iswspace(wchar_t wc) {
   return lookup_properties(wc) & PROP_SPACE;
 }
 
+inline int iswxdigit(wchar_t wc) {
+  if ((wc >= '0' && wc <= '9') ||
+      (wc >= 'A' && wc <= 'F') ||
+      (wc >= 'a' && wc <= 'f')) {
+    return 1;
+  }
+  return 0;
+}
+
 inline mywctype_t wctype(const char *property) {
   std::string_view prop(property);
 
@@ -167,15 +176,14 @@ inline int iswctype(wchar_t wc, mywctype_t desc) {
   case WCTYPE_UPPER:
     return iswupper(wc);
   case WCTYPE_XDIGIT:
-    // TODO: implement iswxdigit
-    return 0;
+    return iswxdigit(wc);
   default:
     return 0;
   }
 }
 
 // TODO: iswprint
-// TODO: iswxdigit
+// TODO: iswcntrl
 
 } // namespace my_wctype
 

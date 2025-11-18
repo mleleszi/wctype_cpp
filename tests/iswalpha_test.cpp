@@ -1,6 +1,5 @@
 #include "wctype_test_base.h"
 #include "mywctype.h"
-#include <cwchar>
 
 class AlphaTest : public WctypeTest,
                   public ::testing::WithParamInterface<TestCase> {

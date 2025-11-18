@@ -23,6 +23,9 @@ add_executable(wctype_tests
         iswgraph_test.cpp
         iswlower_test.cpp
         iswspace_test.cpp
+        iswxdigit_test.cpp
+        iswctype_test.cpp
+        wctype_test.cpp
 )
 target_link_libraries(wctype_tests PRIVATE
         GTest::gtest_main
