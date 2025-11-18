@@ -34,6 +34,7 @@ add_custom_command(
 
 add_custom_target(generate_tables DEPENDS ${GENERATED_FILES})
 
+# INTERFACE library (header-only)
 add_library(mywctype INTERFACE)
 target_include_directories(mywctype INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -41,16 +42,22 @@ target_include_directories(mywctype INTERFACE
 )
 add_dependencies(mywctype generate_tables)
 
-add_executable(size_check_temp EXCLUDE_FROM_ALL test_size.cpp)
-target_link_libraries(size_check_temp mywctype)
+# STATIC library for size measurement
+add_library(mywctype_static STATIC wctype_tables.cpp)
+target_include_directories(mywctype_static PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR}
+)
+add_dependencies(mywctype_static generate_tables)
 
-add_custom_target(check_size
-        COMMAND ${CMAKE_COMMAND} -E echo "=== Binary Size Report ==="
-        COMMAND size $<TARGET_FILE:size_check_temp> 2>/dev/null || echo "size command not available, using ls:"
-        COMMAND ls -lh $<TARGET_FILE:size_check_temp>
+add_custom_target(check-size
+        COMMAND ${CMAKE_COMMAND} -E echo "=== Library Size Report ==="
         COMMAND ${CMAKE_COMMAND} -E echo ""
-        COMMAND ${CMAKE_COMMAND} -E echo "Data section contains lookup tables - level1 and level2"
-        DEPENDS size_check_temp
-        COMMENT "Checking binary size impact of lookup tables..."
-        VERBATIM
+        COMMAND ls -lh $<TARGET_FILE:mywctype_static>
+        COMMAND ${CMAKE_COMMAND} -E echo ""
+        COMMAND size $<TARGET_FILE:mywctype_static>
+        COMMAND ${CMAKE_COMMAND} -E echo ""
+        COMMAND ${CMAKE_COMMAND} -E echo "Expected table size: level1 ~8.7KB + level2 ~37KB = ~46KB total"
+        DEPENDS mywctype_static
+        COMMENT "Checking library size..."
 )
