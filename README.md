@@ -13,3 +13,9 @@ ninja
 ```
 ninja check-wctype
 ```
+
+## Checking the size of the generated static library
+
+```
+ninja check-size
+```
