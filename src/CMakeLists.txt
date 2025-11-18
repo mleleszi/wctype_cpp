@@ -56,8 +56,6 @@ add_custom_target(check-size
         COMMAND ls -lh $<TARGET_FILE:mywctype_static>
         COMMAND ${CMAKE_COMMAND} -E echo ""
         COMMAND size $<TARGET_FILE:mywctype_static>
-        COMMAND ${CMAKE_COMMAND} -E echo ""
-        COMMAND ${CMAKE_COMMAND} -E echo "Expected table size: level1 ~8.7KB + level2 ~37KB = ~46KB total"
         DEPENDS mywctype_static
         COMMENT "Checking library size..."
 )
