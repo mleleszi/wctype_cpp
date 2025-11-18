@@ -14,11 +14,11 @@ inline constexpr uint16_t level1[4352] = {
 };
 
 // Level 2 table: property bitfields for each character
-inline constexpr uint16_t level2[37888] = {
+inline constexpr uint8_t level2[37888] = {
 #include "wctype_level2.inc"
 };
 
-inline uint16_t lookup_properties(wint_t wc) {
+inline uint8_t lookup_properties(wint_t wc) {
   // Out of Unicode range
   if (wc > 0x10FFFF || (wc >= 0xD800 && wc <= 0xDFFF)) {
     return 0;

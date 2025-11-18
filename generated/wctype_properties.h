@@ -6,18 +6,15 @@
 
 #include <stdint.h>
 
-enum PropertyBits : uint16_t {
-  PROP_UPPER  = 1 << 0,
-  PROP_LOWER  = 1 << 1,
-  PROP_ALPHA  = 1 << 2,
-  PROP_DIGIT  = 1 << 3,
-  PROP_XDIGIT = 1 << 4,
-  PROP_SPACE  = 1 << 5,
-  PROP_PRINT  = 1 << 6,
-  PROP_GRAPH  = 1 << 7,
-  PROP_BLANK  = 1 << 8,
-  PROP_CNTRL  = 1 << 9,
-  PROP_PUNCT  = 1 << 10,
+enum PropertyBits : uint8_t {
+  PROP_UPPER = 1 << 0,
+  PROP_LOWER = 1 << 1,
+  PROP_ALPHA = 1 << 2,
+  PROP_SPACE = 1 << 3,
+  PROP_PRINT = 1 << 4,
+  PROP_BLANK = 1 << 5,
+  PROP_CNTRL = 1 << 6,
+  PROP_PUNCT = 1 << 7,
 };
 
 #endif // WCTYPE_PROPERTIES_H

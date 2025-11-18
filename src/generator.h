@@ -16,31 +16,15 @@
 #include <iomanip>
 #include <iostream>
 
-/*
- * TODO: possible optimization
- * PROP_DIGIT: Might not be needed, in C.UTF8 only ASCII 0-9 are digits
- * PROP_XDIGIT: Might not be needed, in C.UTF8, only ASCII hex digits are xdigits.
- * PROP_SPACE: Might not be needed, in C.UTF8, only the 6 ASCII characters are space.
- * PROP_BLANK: Might not be needed, in C.UTF8, only ' ' and '\t' are blank
- * PROP_ALNUM: Might not be needed, can be PROP_ALPHA | PROP_DIGIT
- * PROP_GRAPH: Migt not be needed, can be PROP_PRINT & !PROP_SPACE
- *
- * These 6 might not be needed for the lookup table, and could be hardcoded into the classification functions.
- * With these 6 removed, the flag would only need to be 8 bits, saving a lot of space.
- * (we still need to handle these as a wctype_t descriptor though)
- */
-enum PropertyBits : uint16_t {
+enum PropertyBits : uint8_t {
   PROP_UPPER = 1 << 0,
   PROP_LOWER = 1 << 1,
   PROP_ALPHA = 1 << 2,
-  PROP_DIGIT = 1 << 3,
-  PROP_XDIGIT = 1 << 4,
-  PROP_SPACE = 1 << 5,
-  PROP_PRINT = 1 << 6,
-  PROP_GRAPH = 1 << 7,
-  PROP_BLANK = 1 << 8,
-  PROP_CNTRL = 1 << 9,
-  PROP_PUNCT = 1 << 10,
+  PROP_SPACE = 1 << 3,
+  PROP_PRINT = 1 << 4,
+  PROP_BLANK = 1 << 5,
+  PROP_CNTRL = 1 << 6,
+  PROP_PUNCT = 1 << 7,
 };
 
 // Non-whitespace spaces in C.UTF-8
@@ -102,11 +86,11 @@ inline std::vector<UnicodeEntry> read_unicode_data(
 }
 
 // Handles Unicode ranges defined by <First> and <Last>
-inline void handle_ranges(std::unordered_map<uint32_t, uint16_t> &properties,
+inline void handle_ranges(std::unordered_map<uint32_t, uint8_t> &properties,
                           const std::vector<UnicodeEntry> &entries) {
   struct RangeInfo {
     uint32_t start;
-    uint16_t props;
+    uint8_t props;
   };
 
   std::optional<RangeInfo> range_info;
@@ -124,11 +108,11 @@ inline void handle_ranges(std::unordered_map<uint32_t, uint16_t> &properties,
 }
 
 // Creates the properties flag for a given UnicodeEntry
-inline uint16_t get_props(const UnicodeEntry &entry) {
+inline uint8_t get_props(const UnicodeEntry &entry) {
   const uint32_t codepoint = entry.codepoint;
   const std::string_view category = entry.category;
 
-  uint16_t props = 0;
+  uint8_t props = 0;
   // Letter
   if (starts_with(category, 'L')) {
     props |= PROP_ALPHA;
@@ -146,11 +130,6 @@ inline uint16_t get_props(const UnicodeEntry &entry) {
   else if (starts_with(category, 'N')) {
     if (category == "Nd") {
       props |= PROP_ALPHA;
-
-      // C.UTF-8 only considers ASCII as digits
-      if (codepoint >= 0x0030 && codepoint <= 0x0039) {
-        props |= PROP_DIGIT;
-      }
     } else if (category == "Nl") {
       props |= PROP_ALPHA;
     }
@@ -186,35 +165,11 @@ inline uint16_t get_props(const UnicodeEntry &entry) {
     props |= PROP_PRINT;
   }
 
-  // Graph = print but not space
-  if ((props & PROP_PRINT) && !(props & PROP_SPACE)) {
-    props |= PROP_GRAPH;
-  }
-
-  // Special case: NO-BREAK SPACE is graphical in glibc C.UTF-8
-  if (codepoint == 0x00A0) {
-    props |= PROP_GRAPH;
-  }
-
   return props;
 }
 
 // Handle special cases not parseable from UnicodeData.txt
-void handle_special_cases(std::unordered_map<uint32_t, uint16_t> &properties) {
-  // Hexadecimal digits (0-9, A-F, a-f)
-  for (uint32_t c = 0x0030; c <= 0x0039; ++c) {
-    // 0-9
-    properties[c] |= PROP_XDIGIT;
-  }
-  for (uint32_t c = 0x0041; c <= 0x0046; ++c) {
-    // A-F
-    properties[c] |= PROP_XDIGIT;
-  }
-  for (uint32_t c = 0x0061; c <= 0x0066; ++c) {
-    // a-f
-    properties[c] |= PROP_XDIGIT;
-  }
-
+inline void handle_special_cases(std::unordered_map<uint32_t, uint8_t> &properties) {
   // ASCII whitespace characters
   properties[0x0020] |= PROP_SPACE; // SPACE
   properties[0x0009] |= PROP_SPACE; // TAB
@@ -230,9 +185,9 @@ void handle_special_cases(std::unordered_map<uint32_t, uint16_t> &properties) {
 
 
 // Returns codepoint -> property flag mappings
-inline std::unordered_map<uint32_t, uint16_t> parse_unicode_data(
+inline std::unordered_map<uint32_t, uint8_t> parse_unicode_data(
     const std::vector<UnicodeEntry> &entries) {
-  std::unordered_map<uint32_t, uint16_t> properties;
+  std::unordered_map<uint32_t, uint8_t> properties;
 
   for (const auto &entry : entries) {
     const uint32_t codepoint = entry.codepoint;
@@ -259,22 +214,22 @@ inline std::unordered_map<uint32_t, uint16_t> parse_unicode_data(
 
 struct StagedLookupTable {
   std::vector<uint16_t> level1; // Maps codepoint >> 8 to level2 offset
-  std::vector<uint16_t> level2; // Actual properties
+  std::vector<uint8_t> level2; // Actual properties
 };
 
 inline StagedLookupTable build_lookup_tables(
-    const std::unordered_map<uint32_t, uint16_t> &properties) {
+    const std::unordered_map<uint32_t, uint8_t> &properties) {
   constexpr uint32_t unicode_max = 0x110000;
   constexpr uint32_t block_size = 256;
   constexpr uint32_t num_blocks = unicode_max / block_size;
 
   // Block type: 256 property values
-  using Block = std::array<uint16_t, block_size>;
+  using Block = std::array<uint8_t, block_size>;
 
   // Map: block content -> block index in level2
   std::map<Block, size_t> blocks;
   std::vector<uint16_t> level1;
-  std::vector<uint16_t> level2;
+  std::vector<uint8_t> level2;
 
   for (uint32_t block_num = 0; block_num < num_blocks; ++block_num) {
     // Extract properties for this 256-character block
@@ -282,7 +237,7 @@ inline StagedLookupTable build_lookup_tables(
     for (uint32_t offset = 0; offset < block_size; ++offset) {
       uint32_t codepoint = block_num << 8 | offset;
       auto it = properties.find(codepoint);
-      const uint16_t props = it != properties.end() ? it->second : 0;
+      const uint8_t props = it != properties.end() ? it->second : 0;
       block_content[offset] = props;
     }
 
@@ -315,7 +270,7 @@ inline StagedLookupTable build_lookup_tables(
   std::cout << "  Block sharing: " << (0x1100 - blocks.size()) <<
       " blocks saved\n";
   std::cout << "  Memory: Level1=" << (level1.size() * 2) << " bytes, "
-      << "Level2=" << (level2.size() * 2) << " bytes\n";
+      << "Level2=" << (level2.size() * 1) << " bytes\n";
 
   return {level1, level2};
 }
@@ -334,18 +289,15 @@ inline void generate_code(const StagedLookupTable &lookup_table) {
 
 #include <stdint.h>
 
-enum PropertyBits : uint16_t {
-  PROP_UPPER  = 1 << 0,
-  PROP_LOWER  = 1 << 1,
-  PROP_ALPHA  = 1 << 2,
-  PROP_DIGIT  = 1 << 3,
-  PROP_XDIGIT = 1 << 4,
-  PROP_SPACE  = 1 << 5,
-  PROP_PRINT  = 1 << 6,
-  PROP_GRAPH  = 1 << 7,
-  PROP_BLANK  = 1 << 8,
-  PROP_CNTRL  = 1 << 9,
-  PROP_PUNCT  = 1 << 10,
+enum PropertyBits : uint8_t {
+  PROP_UPPER = 1 << 0,
+  PROP_LOWER = 1 << 1,
+  PROP_ALPHA = 1 << 2,
+  PROP_SPACE = 1 << 3,
+  PROP_PRINT = 1 << 4,
+  PROP_BLANK = 1 << 5,
+  PROP_CNTRL = 1 << 6,
+  PROP_PUNCT = 1 << 7,
 };
 
 #endif // WCTYPE_PROPERTIES_H
@@ -373,7 +325,7 @@ enum PropertyBits : uint16_t {
     for (size_t i = 0; i < level2.size(); i += 8) {
       f << "  ";
       for (size_t j = i; j < i + 8 && j < level2.size(); ++j) {
-        f << "0x" << std::hex << std::setw(4) << std::setfill('0') << level2[j]
+        f << "0x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(level2[j])
             << std::dec <<
             std::setfill(' ');
         if (j + 1 < level2.size()) {
@@ -402,11 +354,11 @@ inline constexpr uint16_t level1[)" << level1.size() << R"(] = {
 };
 
 // Level 2 table: property bitfields for each character
-inline constexpr uint16_t level2[)" << level2.size() << R"(] = {
+inline constexpr uint8_t level2[)" << level2.size() << R"(] = {
 #include "wctype_level2.inc"
 };
 
-inline uint16_t lookup_properties(wint_t wc) {
+inline uint8_t lookup_properties(wint_t wc) {
   // Out of Unicode range
   if (wc > 0x10FFFF || (wc >= 0xD800 && wc <= 0xDFFF)) {
     return 0;

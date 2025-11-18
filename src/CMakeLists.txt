@@ -34,9 +34,28 @@ add_custom_command(
 
 add_custom_target(generate_tables DEPENDS ${GENERATED_FILES})
 
+# INTERFACE library (header-only)
 add_library(mywctype INTERFACE)
 target_include_directories(mywctype INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}
 )
 add_dependencies(mywctype generate_tables)
+
+# STATIC library for size measurement
+add_library(mywctype_static STATIC wctype_tables.cpp)
+target_include_directories(mywctype_static PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR}
+)
+add_dependencies(mywctype_static generate_tables)
+
+add_custom_target(check-size
+        COMMAND ${CMAKE_COMMAND} -E echo "=== Library Size Report ==="
+        COMMAND ${CMAKE_COMMAND} -E echo ""
+        COMMAND ls -lh $<TARGET_FILE:mywctype_static>
+        COMMAND ${CMAKE_COMMAND} -E echo ""
+        COMMAND size $<TARGET_FILE:mywctype_static>
+        DEPENDS mywctype_static
+        COMMENT "Checking library size..."
+)
