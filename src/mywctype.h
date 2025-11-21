@@ -3,7 +3,8 @@
 
 #include "wctype_table.h"
 // #include "case_mapping.h"
-#include "case_mapping_staged.h"
+// #include "case_mapping_staged.h"
+#include "ht.h"
 
 #include <string_view>
 

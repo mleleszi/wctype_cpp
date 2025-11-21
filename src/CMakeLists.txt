@@ -18,6 +18,8 @@ set(GENERATED_FILES
         ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_lower_level2.inc
         ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_upper_level1.inc
         ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_upper_level2.inc
+
+        ${CMAKE_CURRENT_BINARY_DIR}/ht.h
 )
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../unicodedata
