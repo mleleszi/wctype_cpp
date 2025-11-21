@@ -13,12 +13,9 @@ set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
 
-set(CMAKE_BUILD_TYPE_SAVED ${CMAKE_BUILD_TYPE})
 set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
 
 FetchContent_MakeAvailable(googlebenchmark)
-
-set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_SAVED} CACHE STRING "" FORCE)
 
 add_executable(towupper_benchmark
         towupper_benchmark.cpp
@@ -46,6 +43,19 @@ target_compile_definitions(towlower_benchmark PRIVATE
         BENCHMARK_LOCALE="C.UTF-8"
 )
 
+add_executable(classification_benchmark
+        classification_benchmark.cpp
+)
+
+target_link_libraries(classification_benchmark PRIVATE
+        benchmark::benchmark
+        mywctype
+)
+
+target_compile_definitions(classification_benchmark PRIVATE
+        BENCHMARK_LOCALE="C.UTF-8"
+)
+
 add_custom_target(bench-towupper
         COMMAND towupper_benchmark
         DEPENDS towupper_benchmark
@@ -60,10 +70,18 @@ add_custom_target(bench-towlower
         COMMENT "Running towlower benchmarks..."
 )
 
+add_custom_target(bench-classification
+        COMMAND classification_benchmark
+        DEPENDS classification_benchmark
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running classification benchmarks..."
+)
+
 add_custom_target(bench-all
         COMMAND towupper_benchmark
         COMMAND towlower_benchmark
-        DEPENDS towupper_benchmark towlower_benchmark
+        COMMAND classification_benchmark
+        DEPENDS towupper_benchmark towlower_benchmark classification_benchmark
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Running all case conversion benchmarks..."
+        COMMENT "Running all benchmarks..."
 )
