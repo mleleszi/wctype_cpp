@@ -54,7 +54,7 @@ to the same entry in the block array.
     - xdigit: only few possibilities, can be hardcoded
 
 These arrays could be generated at build time and could be included in the binary itself.
-According to my prototype implementation, this would increase the code size by **~46KB**.
+According to our prototype implementation, this would increase the code size by **~46KB**.
 This approach would provide constant time lookup for the classification functions.
 
 We can also implement fast paths for ASCII cases for all properties, skipping the need for a lookup table in those
@@ -71,7 +71,8 @@ would lead to a smaller binary size and could support locale switching at runtim
 However, it would have a lot of drawbacks. It'd introduce a runtime dependency on the locale files, which we'd have to
 provide separately from the library itself, and there's also the overhead of the initial loading from disk.
 
-I propose that we include the lookup tables in the library itself, and that this increase of the binary size by ~46KB is
+We propose that we include the lookup tables in the library itself, and that this increase of the binary size by ~46KB
+is
 acceptable, it's fine in server environments, and for size
 constrained environments like embedded,
 we could provide a flag for turning this feature off.
@@ -91,7 +92,8 @@ and each mapping would be 8 bytes (wint_t -> wint_t), so this would end up being
 Lookup would be logarithmic, but it might be acceptable as are arrays would be of size ~1400
 and we can also implement fast paths for ASCII cases for all properties, skipping the need for doing binary search.
 
-I've benchmarked my prototype implementation against glibc, and this approach seems ~3 times slower in non ASCII cases
+Benchmarked against glibc, and this approach seems ~3 times slower in non ASCII
+cases
 compared to glibc.
 
 ### Possible solution: two stage lookup table
@@ -99,7 +101,7 @@ compared to glibc.
 We could use a similar two-level table approach as the classification functions.
 The mappings would be stored in 256-entry blocks indexed by the upper 8 bits of the codepoint. Since case mappings are
 sparse (only ~2,800 codepoints), most blocks are empty and can share a single zero-filled block.
-This would provide constant-time lookup, but my prototype implementation shows this be around **~50KB**
+This would provide constant-time lookup, but the prototype implementation shows this be around **~50KB**
 
 Benchmarking this against glibc is showing to this implementation be an order of magnitude faster.
 
@@ -109,7 +111,7 @@ TODO(bassiounix)
 
 ## Build integration
 
-I propose that the generation scripts, which can be written in any language (I'm planning on using C++ though), should
+We propose that the generation scripts, which can be written in any language (I'm planning on using C++ though), should
 not be included in LLVM libc's build system.
 The generation scripts will be checked into the repository, but they should be run manually on Unicode version upgrades,
 and not on every build, and only the generated files themselves will be included in the build.

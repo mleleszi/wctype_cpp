@@ -169,7 +169,8 @@ inline uint8_t get_props(const UnicodeEntry &entry) {
 }
 
 // Handle special cases not parseable from UnicodeData.txt
-inline void handle_special_cases(std::unordered_map<uint32_t, uint8_t> &properties) {
+inline void handle_special_cases(
+    std::unordered_map<uint32_t, uint8_t> &properties) {
   // ASCII whitespace characters
   properties[0x0020] |= PROP_SPACE; // SPACE
   properties[0x0009] |= PROP_SPACE; // TAB
@@ -262,7 +263,6 @@ inline StagedLookupTable build_lookup_tables(
   }
   level1.resize(max_block + 1);
 
-  // Print statistics
   std::cout << "Table statistics:\n";
   std::cout << "  Level 1 entries: " << level1.size() << "\n";
   std::cout << "  Level 2 entries: " << level2.size() << "\n";
@@ -325,7 +325,8 @@ enum PropertyBits : uint8_t {
     for (size_t i = 0; i < level2.size(); i += 8) {
       f << "  ";
       for (size_t j = i; j < i + 8 && j < level2.size(); ++j) {
-        f << "0x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(level2[j])
+        f << "0x" << std::hex << std::setw(2) << std::setfill('0') <<
+            static_cast<int>(level2[j])
             << std::dec <<
             std::setfill(' ');
         if (j + 1 < level2.size()) {

@@ -30,12 +30,10 @@ inline constexpr uint32_t to_lower_level2[6144] = {
 };
 
 inline wint_t towupper_impl(wint_t wc) {
-  // Handle special cases
   if (wc == WEOF) {
     return WEOF;
   }
 
-  // Out of valid Unicode range
   if (wc < 0 || wc > 0x10FFFF || (wc >= 0xD800 && wc <= 0xDFFF)) {
     return wc;
   }
@@ -57,11 +55,10 @@ inline wint_t towupper_impl(wint_t wc) {
   unsigned l2_idx = l2_offset + (wc & 0xFF);
 
   uint32_t target = to_upper_level2[l2_idx];
-  return target ? target : wc;  // Return target or identity if 0
+  return target ? target : wc;
 }
 
 inline wint_t towlower_impl(wint_t wc) {
-  // Handle special cases
   if (wc == WEOF) {
     return WEOF;
   }
@@ -88,7 +85,7 @@ inline wint_t towlower_impl(wint_t wc) {
   unsigned l2_idx = l2_offset + (wc & 0xFF);
 
   uint32_t target = to_lower_level2[l2_idx];
-  return target ? target : wc;  // Return target or identity if 0
+  return target ? target : wc;
 }
 
 #endif // CASE_MAPPING_STAGED_H

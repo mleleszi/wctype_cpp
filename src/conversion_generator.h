@@ -33,7 +33,6 @@ struct CaseMappingEntry {
   }
 };
 
-// Parse a single line from UnicodeData.txt and extract case mapping info
 inline std::optional<CaseMappingEntry>
 parse_case_mapping_line(const std::string_view line) {
   if (line.empty() || line[0] == '#') {
@@ -118,7 +117,6 @@ build_case_mapping_tables(const std::vector<CaseMappingEntry> &entries) {
   std::sort(to_upper.begin(), to_upper.end());
   std::sort(to_lower.begin(), to_lower.end());
 
-  // Remove any duplicates (shouldn't happen)
   to_upper.erase(std::ranges::unique(to_upper,
                                      [](const CaseMapping &a,
                                         const CaseMapping &b) {
