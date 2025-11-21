@@ -102,7 +102,6 @@ inline StagedCaseTable build_staged_table(
 
   using Block = std::array<uint32_t, block_size>;
 
-  // First, build a mapping of all codepoints to their targets
   std::unordered_map<uint32_t, uint32_t> mappings;
   for (const auto &entry : entries) {
     if (to_upper) {
@@ -136,7 +135,6 @@ inline StagedCaseTable build_staged_table(
       }
     }
 
-    // Check if we've seen this block before
     if (auto it = blocks.find(block_content); it != blocks.end()) {
       level1.push_back(it->second);
     } else {
