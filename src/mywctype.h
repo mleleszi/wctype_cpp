@@ -2,7 +2,9 @@
 #define MYWCTYPE_H
 
 #include "wctype_table.h"
-#include "wctype_case_mapping.h"
+// #include "case_mapping.h"
+#include "case_mapping_staged.h"
+
 #include <string_view>
 
 namespace my_wctype {

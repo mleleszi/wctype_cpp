@@ -7,9 +7,17 @@ set(GENERATED_FILES
         ${CMAKE_CURRENT_BINARY_DIR}/wctype_level2.inc
         ${CMAKE_CURRENT_BINARY_DIR}/wctype_table.h
 
-        ${CMAKE_CURRENT_BINARY_DIR}/wctype_case_mapping.h
-        ${CMAKE_CURRENT_BINARY_DIR}/wctype_case_mapping_lower.inc
-        ${CMAKE_CURRENT_BINARY_DIR}/wctype_case_mapping_upper.inc
+        # binary search conversions
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping.h
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_lower.inc
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_upper.inc
+
+        # staged conversions
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_staged.h
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_lower_level1.inc
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_lower_level2.inc
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_upper_level1.inc
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_upper_level2.inc
 )
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../unicodedata
@@ -21,25 +29,44 @@ add_custom_command(
         COMMAND generator
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_CURRENT_BINARY_DIR}/wctype_properties.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/wctype_properties.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/classification/wctype_properties.h
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_CURRENT_BINARY_DIR}/wctype_level1.inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/wctype_level1.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/classification/wctype_level1.inc
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_CURRENT_BINARY_DIR}/wctype_level2.inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/wctype_level2.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/classification/wctype_level2.inc
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_CURRENT_BINARY_DIR}/wctype_table.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/wctype_table.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/classification/wctype_table.h
+
+        # binary search
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_BINARY_DIR}/wctype_case_mapping.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/wctype_case_mapping.h
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/conversion/case_mapping.h
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_BINARY_DIR}/wctype_case_mapping_lower.inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/wctype_case_mapping_lower.inc
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_lower.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/conversion/case_mapping_lower.inc
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_BINARY_DIR}/wctype_case_mapping_upper.inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/wctype_case_mapping_upper.inc
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_upper.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/conversion/case_mapping_upper.inc
+
+        # staged
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_staged.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/conversion/case_mapping_staged.h
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_lower_level1_staged.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/conversion/case_mapping_lower_level1_staged.inc
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_lower_level2_staged.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/conversion/case_mapping_lower_level2_staged.inc
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_upper_level1_staged.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/conversion/case_mapping_upper_level1_staged.inc
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_BINARY_DIR}/case_mapping_upper_level2_staged.inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../generated/conversion/case_mapping_upper_level2_staged.inc
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS generator ${CMAKE_CURRENT_SOURCE_DIR}/../unicodedata/UnicodeData.txt
         COMMENT "Generating wctype lookup tables..."

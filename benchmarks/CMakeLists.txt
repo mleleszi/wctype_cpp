@@ -2,7 +2,7 @@ include(FetchContent)
 FetchContent_Declare(
         googlebenchmark
         GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG v1.9.1
+        GIT_TAG v1.9.4
         GIT_SHALLOW TRUE
         FIND_PACKAGE_ARGS NAMES benchmark
 )
