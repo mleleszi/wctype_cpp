@@ -1,4 +1,4 @@
-Credit note: Worked with @bassiounix and @michaelrj-google to come up with the possible solutions
+Co-author: @bassiounix
 
 ## Motivation & Background
 
