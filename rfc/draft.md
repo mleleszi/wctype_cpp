@@ -81,7 +81,7 @@ we could provide a flag for turning this feature off.
 
 We have multiple options here, depending on if we want to prioritize speed vs size.
 
-### Possible solution: sorted array and binary search lookup
+### Possible Solution #1: sorted array and binary search lookup
 
 There's two functions we need to implement here: towlower, and towupper.
 We could store the actual conversions (codepoint pairs) in a sorted array, and do binary search on lookup.
@@ -96,7 +96,7 @@ Benchmarked against glibc, and this approach seems ~3 times slower in non ASCII
 cases
 compared to glibc.
 
-### Possible solution: two stage lookup table
+### Possible Solution #2: two stage lookup table
 
 We could use a similar two-level table approach as the classification functions.
 The mappings would be stored in 256-entry blocks indexed by the upper 8 bits of the codepoint. Since case mappings are
@@ -105,9 +105,10 @@ This would provide constant-time lookup, but the prototype implementation shows 
 
 Benchmarking this against glibc is showing to this implementation be an order of magnitude faster.
 
-### Possible solution: hashmap
+### Possible Solution #3: Hash Map
 
-TODO(bassiounix)
+Another approach we could take is a direct map of conversions in a hash map directly, where the key is the input character and the value is its upper/lower case mapping. We have around *2800* entries for upper case and lower case mappings with around **33KB** increase in binary size, given that we store those mappings directly in memory with a standard implementation of a hash map.
+This approach is shown to be **the fastest** of all 3 with 2nd best in binary size bloat. A possible optimization for the size would be to store the conversions on disk and load it at runtime; and applying compression here would be beneficial. However, this would increase the moving parts and assertions of the library (like what to do if the file is not found and where to store/manage it). So we propose to ship the data directly with the library binary for convenience.
 
 ## Build integration
 
@@ -125,8 +126,3 @@ might not be totally accurate and representative, only quick prototyping was don
 ## Prototype code
 
 [https://github.com/mleleszi/wctype_prototype](https://github.com/mleleszi/wctype_prototype)
-
-
-
-
-
