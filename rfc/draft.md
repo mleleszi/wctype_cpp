@@ -17,33 +17,20 @@ without bloating the binary size.
 
 ## Goals
 
-A fully standard compliant C.UTF8 and C locale implementation. Support for other locales is not currently planned.
-</br>
-[ISO C standard](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/wctype.h.html)
+A fully [standard compliant](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/wctype.h.html) C.UTF8 and C locale implementation. Support for other locales is not currently planned.
 
 ## Classification functions
 
-For each code point, we can define a bitmask where each bit would represent a Unicode category,
-like alpha, digit, upper, etc. There's 12 categories required for the wctype implementation, so this would fit in 2
-bytes.
-We could store bitmasks in some kind of lookup table. However, not all properties need a lookup table,
-as some properties are composite ones (alnum, graph), and some properties can be hardcoded for C.UTF8 (for example, in
-C.UTF8 only ASCII digits are considered digits),
-so in practice we can get away with using a single byte flag.
+For each code point, we can define a bitmask where each bit would represent a Unicode category, like alpha, digit, upper, etc. There's 12 categories required for the wctype implementation, so this would fit in 2 bytes.
+We could store bitmasks in some kind of lookup table. However, not all properties need a lookup table, as some properties are composite ones (alnum, graph), and some properties can be hardcoded for C.UTF8 (for example, in C.UTF8 only ASCII digits are considered digits), so in practice we can get away with using a single byte flag.
 
 ### Proposed solution: Two stage lookup table
 
-We can take advantage of the clustered nature of Unicode assignments, where contiguous ranges of
-code points frequently share the same classification properties and don't store a mask for each property,
-but for blocks of properties.
+We can take advantage of the clustered nature of Unicode assignments, where contiguous ranges of code points frequently share the same classification properties and don't store a mask for each property, but for blocks of properties.
 
-**Index array**: The 21 bit code point is split. The upper 13 bits would index into the index table, where each
-entry would represent a block of 256 (the remaining 8 bits) consecutive characters.
-The value store here is an index into the block table.
+**Index array**: The 21 bit code point is split. The upper 13 bits would index into the index table, where each entry would represent a block of 256 consecutive characters. The value stored here is an index into the block table.
 
-**Block array**: This array contains the actual property masks. Crucially, the identical blocks are deduplicated.
-If multiple 256-character ranges in Unicode have the exact same properties, they'd all point
-to the same entry in the block array.
+**Block array**: This array contains the actual property masks. Crucially, the identical blocks are deduplicated. If multiple 256-character ranges in Unicode have the exact same properties, they'd all point to the same entry in the block array.
 
 - Properties to be stored in the lookup tables
     - upper, lower, alpha, space, print, blank, control, punct
@@ -57,76 +44,58 @@ These arrays could be generated at build time and could be included in the binar
 According to our prototype implementation, this would increase the code size by **~46KB**.
 This approach would provide constant time lookup for the classification functions.
 
-We can also implement fast paths for ASCII cases for all properties, skipping the need for a lookup table in those
-cases.
+We can also implement fast paths for ASCII cases for all properties, skipping the need for a lookup table in those cases.
 
 Benchmarking this against glibc is showing to this implementation be an order of magnitude faster.
 
 ### Alternatives
 
-We could do a similar approach as glibc, and store the lookup tables on disk which would then be loaded
-on locale change, and get memory mapped into memory to be used in the actual wctype function calls. This
-would lead to a smaller binary size and could support locale switching at runtime.
+We could do a similar approach as glibc, and store the lookup tables on disk which would then be loaded on locale change, and get memory mapped into memory to be used in the actual wctype function calls. This would lead to a smaller binary size and could support locale switching at runtime.
 
-However, it would have a lot of drawbacks. It'd introduce a runtime dependency on the locale files, which we'd have to
-provide separately from the library itself, and there's also the overhead of the initial loading from disk.
+However, it would have a lot of drawbacks. It'd introduce a runtime dependency on the locale files, which we'd have to provide separately from the library itself, and there's also the overhead of the initial loading from disk.
 
-We propose that we include the lookup tables in the library itself, and that this increase of the binary size by ~46KB
-is
-acceptable, it's fine in server environments, and for size
-constrained environments like embedded,
+We propose that we include the lookup tables in the library itself, and that this increase of the binary size by ~46KB is acceptable, it's fine in server environments, and for size constrained environments like embedded,
 we could provide a flag for turning this feature off.
 
 ## Conversion functions
 
-We have multiple options here, depending on if we want to prioritize speed vs size.
+There's two main functions we need to implement here: towlower and towupper. There are multiple options here, depending on if we want to prioritize speed vs size. 
 
-### Possible Solution #1: sorted array and binary search lookup
+### Proposed solution: Hash Map
 
-There's two functions we need to implement here: towlower, and towupper.
-We could store the actual conversions (codepoint pairs) in a sorted array, and do binary search on lookup.
-We'd need two arrays, and array mapping from lower to upper and vice versa. There's roughly 2800 codepoints that have a
-conversion,
-and each mapping would be 8 bytes (wint_t -> wint_t), so this would end up being **~23KB**.
+The most straightforward approch is to store the conversions in hash map, where the key is the input character and the value is its upper/lower case mapping. We have around *2800* entries for upper and lower case mappings, leading to around **24.5KB** increase in binary size, given that we store those mappings directly in memory with an efficient implementation of a hash map. (probably a constexpr, flat hash map with probing)
 
-Lookup would be logarithmic, but it might be acceptable as are arrays would be of size ~1400
-and we can also implement fast paths for ASCII cases for all properties, skipping the need for doing binary search.
+This approach is shown to be the fastest of all 3 approches we tried, while being 2nd best in binary size bloat. A possible optimization for the size would be to store the conversions on disk and load it at runtime; and applying compression here would be beneficial. However, this would increase the moving parts and assertions of the library (like what to do if the file is not found and where to store/manage it). So we propose to ship the data directly with the library binary for convenience.
 
-Benchmarked against glibc, and this approach seems ~3 times slower in non ASCII
-cases
-compared to glibc.
+### Alternative Solution #1: sorted array and binary search lookup
 
-### Possible Solution #2: two stage lookup table
+We could store the conversions in a sorted array, and do binary search on lookup.
+We'd need two arrays, and array mapping from lower to upper and vice versa. There's roughly 2800 codepoints that have a conversion, and each mapping would be 8 bytes (wint_t -> wint_t), so this would end up being **~23KB**.
+
+Lookup would be logarithmic, but it might be acceptable as the arrays would be of size ~1400 and we can also implement fast paths for ASCII cases for all properties, skipping the need for doing binary search.
+
+While this is approach is shown to be the most optimal for size, it seems to be ~3 times slower in non ASCII cases compared to glibc.
+
+### Alternative Solution #2: two stage lookup table
 
 We could use a similar two-level table approach as the classification functions.
-The mappings would be stored in 256-entry blocks indexed by the upper 8 bits of the codepoint. Since case mappings are
-sparse (only ~2,800 codepoints), most blocks are empty and can share a single zero-filled block.
-This would provide constant-time lookup, but the prototype implementation shows this be around **~50KB**
+The mappings would be stored in 256-entry blocks indexed by the upper 8 bits of the codepoint. Since case mappings are sparse, most blocks are empty and can share a single zero-filled block.
+This would provide constant-time lookup, but the prototype implementation shows this be around **~50KB** in size.
 
-Benchmarking this against glibc is showing to this implementation be an order of magnitude faster.
-
-### Possible Solution #3: Hash Map
-
-Another approach we could take is a direct map of conversions in a hash map directly, where the key is the input character and the value is its upper/lower case mapping. We have around *2800* entries for upper case and lower case mappings with around **24.5KB** increase in binary size, given that we store those mappings directly in memory with a standard implementation of a hash map.
-This approach is shown to be **the fastest** of all 3 with 2nd best in binary size bloat. A possible optimization for the size would be to store the conversions on disk and load it at runtime; and applying compression here would be beneficial. However, this would increase the moving parts and assertions of the library (like what to do if the file is not found and where to store/manage it). So we propose to ship the data directly with the library binary for convenience.
+This is shown to be the same in speed as the hash map implementation, while being twice the size.
 
 ## Build integration
 
-We propose that the generation scripts, which can be written in any language (I'm planning on using C++ though), should
-not be included in LLVM libc's build system.
-The generation scripts will be checked into the repository, but they should be run manually on Unicode version upgrades,
-and not on every build, and only the generated files themselves will be included in the build.
+We propose that the generation scripts, which can be written in any language (we're planning on using C++ though), should not be included in LLVM libc's build system. The generation scripts will be checked into the repository, but they should be run manually on Unicode version upgrades, and not on every build, and only the generated files themselves will be included in the build.
 
 ## Benchmarks
 
-Benchmark results can be
-seen [here](https://github.com/mleleszi/wctype_prototype/blob/main/benchmarks/benchmarks.md). This
-might not be totally accurate and representative, only quick prototyping was done.
+Benchmark results can be seen [here](https://github.com/mleleszi/wctype_prototype/blob/main/benchmarks/benchmarks.md). 
+This might not be totally accurate and representative, only quick prototyping was done.
 
 ## Prototype code
 
 [https://github.com/mleleszi/wctype_prototype](https://github.com/mleleszi/wctype_prototype)
 
 ## Conclusion
-
-Total proposed: ~70KB.
+We propose a two-level lookup table for wide character classification and a hash map for case conversion functions. These structures should be stored within the library, resulting in an estimated size increase of **70KB**. To address resource constrained environments, this feature should be optional and configurable at build time.
