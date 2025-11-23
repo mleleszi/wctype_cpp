@@ -65,7 +65,8 @@ There are two main functions we need to implement here: towlower and towupper. T
 
 The most straightforward approach is to store the conversions in a hash map, where the key is the input character and the value is its upper/lower case mapping. We have around *2800* entries for upper and lower case mappings, leading to around **24.5KB** increase in binary size, given that we store those mappings directly in memory with an efficient implementation of a hash map. (probably a constexpr, flat hash map with probing)
 
-This approach is shown to be the fastest of all 3 approaches we tried, while being 2nd best in binary size bloat. A possible optimization for the size would be to store the conversions on disk and load them at runtime. Applying some kind of compression in this approach would also be beneficial. However, this would increase the moving parts and dependencies of the library (like what to do if the file is not found and where to store/manage it). So we propose to ship the data directly with the library binary for convenience.
+This approach is shown to be the fastest of all 3 approaches we tried, while being 2nd best in binary size bloat. A possible optimization for the size would be to store the conversions on disk 
+and load them at runtime, with some form of compression to reduce disk I/O. However, this would increase the moving parts and dependencies of the library (like what to do if the file is not found and where to store/manage it). So we propose to ship the data directly with the library binary for convenience.
 
 ### Alternative Solution #1: sorted array and binary search lookup
 
@@ -91,7 +92,7 @@ We propose that the generation scripts, which can be written in any language (we
 ## Benchmarks
 
 Benchmark results can be seen [here](https://github.com/mleleszi/wctype_prototype/blob/main/benchmarks/benchmarks.md). 
-This might not be totally accurate and representative, only quick prototyping was done.
+Might not be totally accurate and representative, only quick prototyping was done.
 
 ## Prototype code
 
