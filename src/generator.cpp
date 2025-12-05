@@ -19,3 +19,5 @@ int main() {
   auto to_lower_table = build_staged_table(staged_case_mappings, false);
   generate_staged_case_code(to_upper_table, to_lower_table);
 }
+
+
