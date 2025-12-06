@@ -1,5 +1,6 @@
 #include "wctype_test_base.h"
 #include "mywctype.h"
+#include "v8/v8_unicode.h"
 
 class AlphaTest : public WctypeTest,
                   public ::testing::WithParamInterface<TestCase> {
@@ -9,6 +10,7 @@ TEST_P(AlphaTest, IsAlpha) {
   auto test = GetParam();
   int my_result = my_wctype::iswalpha(test.codepoint);
   int std_result = std::iswalpha(static_cast<wint_t>(test.codepoint));
+  bool v8_result = v8_unicode::IsLetter(test.codepoint);
 
   EXPECT_EQ((my_result != 0), test.expected)
     << "Failed for U+" << std::hex << test.codepoint << " (" << test.name <<
@@ -16,6 +18,10 @@ TEST_P(AlphaTest, IsAlpha) {
   EXPECT_EQ((my_result != 0), (std_result != 0))
     << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.
 name << ")";
+EXPECT_EQ((my_result != 0), v8_result)
+    << "Mismatch with std for U+" << std::hex << test.codepoint << " (" << test.
+name << ")";
+  
 }
 
 INSTANTIATE_TEST_SUITE_P(AlphaTests, AlphaTest, ::testing::Values(

@@ -35,6 +35,7 @@ add_executable(wctype_tests
 target_link_libraries(wctype_tests PRIVATE
         GTest::gtest_main
         mywctype
+        v8_unicode
 )
 
 include(GoogleTest)

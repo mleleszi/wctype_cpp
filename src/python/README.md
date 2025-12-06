@@ -1,0 +1,1 @@
+python3 classification_generator.py --unicode-data ../../unicodedata/UnicodeData.txt --unicode-version 17.0.0

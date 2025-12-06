@@ -101,3 +101,6 @@ add_custom_target(check-size
         DEPENDS mywctype_static
         COMMENT "Checking library size..."
 )
+
+# Add v8 unicode library
+add_subdirectory(v8)

@@ -24,6 +24,7 @@ add_executable(towupper_benchmark
 target_link_libraries(towupper_benchmark PRIVATE
         benchmark::benchmark
         mywctype
+
 )
 
 target_compile_definitions(towupper_benchmark PRIVATE

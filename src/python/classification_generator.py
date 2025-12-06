@@ -1,17 +1,19 @@
 from enum import IntFlag
 from dataclasses import dataclass
 from collections import defaultdict
+import argparse
 
 
+# WARNING: If you modify this enum, you must update the generated C++ enum as well.
 class PropertyFlag(IntFlag):
-    PROP_UPPER = 1 << 0
-    PROP_LOWER = 1 << 1
-    PROP_ALPHA = 1 << 2
-    PROP_SPACE = 1 << 3
-    PROP_PRINT = 1 << 4
-    PROP_BLANK = 1 << 5
-    PROP_CNTRL = 1 << 6
-    PROP_PUNCT = 1 << 7
+    UPPER = 1 << 0
+    LOWER = 1 << 1
+    ALPHA = 1 << 2
+    SPACE = 1 << 3
+    PRINT = 1 << 4
+    BLANK = 1 << 5
+    CNTRL = 1 << 6
+    PUNCT = 1 << 7
 
 
 NON_WHITESPACE_SPACE = [
@@ -74,7 +76,7 @@ def is_non_whitespace_space(codepoint: int) -> bool:
 
 
 def handle_ranges(
-    properties: defaultdict[int, int], entries: list[UnicodeEntry]
+        properties: defaultdict[int, int], entries: list[UnicodeEntry]
 ) -> None:
     """Handle Unicode ranges defined by <First> and <Last>."""
     range_start: int | None = None
@@ -100,40 +102,40 @@ def get_props(entry: UnicodeEntry) -> int:
 
     # Letter
     if category.startswith("L"):
-        props |= PropertyFlag.PROP_ALPHA
+        props |= PropertyFlag.ALPHA
         if category == "Lu":
-            props |= PropertyFlag.PROP_UPPER
+            props |= PropertyFlag.UPPER
         elif category == "Ll":
-            props |= PropertyFlag.PROP_LOWER
+            props |= PropertyFlag.LOWER
 
     # Number
     elif category.startswith("N"):
         if category in ("Nd", "Nl"):
-            props |= PropertyFlag.PROP_ALPHA
+            props |= PropertyFlag.ALPHA
 
     # Punctuation
     elif category.startswith("P"):
-        props |= PropertyFlag.PROP_PUNCT
+        props |= PropertyFlag.PUNCT
 
     # Symbol
     elif category.startswith("S"):
-        props |= PropertyFlag.PROP_PUNCT  # Considered punctuation in C.UTF8
+        props |= PropertyFlag.PUNCT  # Considered punctuation in C.UTF8
 
     # Separator
     elif category.startswith("Z"):
         if not is_non_whitespace_space(codepoint):
-            props |= PropertyFlag.PROP_SPACE
+            props |= PropertyFlag.SPACE
             if category == "Zs":
-                props |= PropertyFlag.PROP_BLANK
+                props |= PropertyFlag.BLANK
 
     # Control
     elif category.startswith("C"):
         if category == "Cc":
-            props |= PropertyFlag.PROP_CNTRL
+            props |= PropertyFlag.CNTRL
 
     # Print = all except control, unassigned, surrogate, format
     if category not in ("Cc", "Cs", "Cn", "Cf"):
-        props |= PropertyFlag.PROP_PRINT
+        props |= PropertyFlag.PRINT
 
     return props
 
@@ -141,20 +143,20 @@ def get_props(entry: UnicodeEntry) -> int:
 def handle_special_cases(properties: defaultdict[int, int]) -> None:
     """Handle special cases not parseable from UnicodeData.txt."""
     # ASCII whitespace characters
-    properties[0x0020] |= PropertyFlag.PROP_SPACE  # SPACE
-    properties[0x0009] |= PropertyFlag.PROP_SPACE  # TAB
-    properties[0x000A] |= PropertyFlag.PROP_SPACE  # LINE FEED
-    properties[0x000D] |= PropertyFlag.PROP_SPACE  # CARRIAGE RETURN
-    properties[0x000B] |= PropertyFlag.PROP_SPACE  # VERTICAL TAB
-    properties[0x000C] |= PropertyFlag.PROP_SPACE  # FORM FEED
+    properties[0x0020] |= PropertyFlag.SPACE  # SPACE
+    properties[0x0009] |= PropertyFlag.SPACE  # TAB
+    properties[0x000A] |= PropertyFlag.SPACE  # LINE FEED
+    properties[0x000D] |= PropertyFlag.SPACE  # CARRIAGE RETURN
+    properties[0x000B] |= PropertyFlag.SPACE  # VERTICAL TAB
+    properties[0x000C] |= PropertyFlag.SPACE  # FORM FEED
 
     # Blank (horizontal spacing only)
-    properties[0x0020] |= PropertyFlag.PROP_BLANK  # SPACE
-    properties[0x0009] |= PropertyFlag.PROP_BLANK  # TAB
+    properties[0x0020] |= PropertyFlag.BLANK  # SPACE
+    properties[0x0009] |= PropertyFlag.BLANK  # TAB
 
 
 def assert_disjoint_invariants(
-    properties: defaultdict[int, int], entries: list[UnicodeEntry]
+        properties: defaultdict[int, int], entries: list[UnicodeEntry]
 ) -> None:
     """Assert disjoint set invariants defined by C standard."""
     category_map = {entry.codepoint: entry.category for entry in entries}
@@ -169,17 +171,17 @@ def assert_disjoint_invariants(
 
         # 2. Punct & alpha must be disjoint
         assert not (
-            (props & PropertyFlag.PROP_PUNCT) and (props & PropertyFlag.PROP_ALPHA)
+                (props & PropertyFlag.PUNCT) and (props & PropertyFlag.ALPHA)
         ), f"U+{codepoint:04X}: punct+alpha"
 
         # 3. Punct & digit must be disjoint
-        assert not ((props & PropertyFlag.PROP_PUNCT) and is_digit), (
+        assert not ((props & PropertyFlag.PUNCT) and is_digit), (
             f"U+{codepoint:04X}: punct+digit"
         )
 
         # 4. Cntrl & print must be disjoint
         assert not (
-            (props & PropertyFlag.PROP_CNTRL) and (props & PropertyFlag.PROP_PRINT)
+                (props & PropertyFlag.CNTRL) and (props & PropertyFlag.PRINT)
         ), f"U+{codepoint:04X}: cntrl+print"
 
 
@@ -253,14 +255,14 @@ def build_lookup_tables(properties: defaultdict[int, int]) -> StagedLookupTable:
     return StagedLookupTable(level1, level2)
 
 
-def generate_code(lookup_table: StagedLookupTable) -> None:
+def generate_code(lookup_table: StagedLookupTable, unicode_version: str) -> None:
     """Generate C header files with lookup tables."""
     level1 = lookup_table.level1
     level2 = lookup_table.level2
 
     # Generate property bit definitions
     with open("wctype_properties.h", "w") as f:
-        f.write("""// Auto-generated by generator.h
+        f.write(f"""// Auto-generated by classification_generator.py, based on Unicode Version {unicode_version}
 // DO NOT EDIT MANUALLY
 
 #ifndef WCTYPE_PROPERTIES_H
@@ -268,23 +270,23 @@ def generate_code(lookup_table: StagedLookupTable) -> None:
 
 #include <stdint.h>
 
-enum PropertyFlag : uint8_t {
-  PROP_UPPER = 1 << 0,
-  PROP_LOWER = 1 << 1,
-  PROP_ALPHA = 1 << 2,
-  PROP_SPACE = 1 << 3,
-  PROP_PRINT = 1 << 4,
-  PROP_BLANK = 1 << 5,
-  PROP_CNTRL = 1 << 6,
-  PROP_PUNCT = 1 << 7,
-};
+enum PropertyFlag : uint8_t {{
+  UPPER = 1 << 0,
+  LOWER = 1 << 1,
+  ALPHA = 1 << 2,
+  SPACE = 1 << 3,
+  PRINT = 1 << 4,
+  BLANK = 1 << 5,
+  CNTRL = 1 << 6,
+  PUNCT = 1 << 7,
+}};
 
 #endif // WCTYPE_PROPERTIES_H
 """)
 
     # Generate level1 table
     with open("wctype_level1.inc", "w") as f:
-        f.write("// Auto-generated level1 table\n")
+        f.write(f"// Auto-generated by classification_generator.py, based on Unicode Version {unicode_version}\n")
         for i in range(0, len(level1), 8):
             f.write("  ")
             for j in range(i, min(i + 8, len(level1))):
@@ -295,7 +297,7 @@ enum PropertyFlag : uint8_t {
 
     # Generate level2 table
     with open("wctype_level2.inc", "w") as f:
-        f.write("// Auto-generated level2 table\n")
+        f.write(f"// Auto-generated by classification_generator.py, based on Unicode Version {unicode_version}\n")
         for i in range(0, len(level2), 8):
             f.write("  ")
             for j in range(i, min(i + 8, len(level2))):
@@ -306,7 +308,7 @@ enum PropertyFlag : uint8_t {
 
     # Generate the main header with lookup function
     with open("wctype_table.h", "w") as f:
-        f.write(f"""// Auto-generated by generator.h
+        f.write(f"""// Auto-generated by classification_generator.py, based on Unicode Version {unicode_version}
 // DO NOT EDIT MANUALLY
 
 #ifndef WCTYPE_TABLE_H
@@ -348,8 +350,23 @@ inline uint8_t lookup_properties(wint_t wc) {{
 
 
 if __name__ == "__main__":
-    entries = read_unicode_data("../../unicodedata/UnicodeData.txt")
+    parser = argparse.ArgumentParser(
+        description="Generate lookup tables for wctype classification functions from Unicode Database."
+    )
+    parser.add_argument(
+        "--unicode-data",
+        required=True,
+        help="Path to UnicodeData.txt"
+    )
+    parser.add_argument(
+        "--unicode-version",
+        required=True,
+        help="Unicode version number (e.g. 17.0.0)"
+    )
+    args = parser.parse_args()
+
+    entries = read_unicode_data(args.unicode_data)
     properties = parse_unicode_data(entries)
     assert_disjoint_invariants(properties, entries)
     tables = build_lookup_tables(properties)
-    generate_code(tables)
+    generate_code(tables, args.unicode_version)
